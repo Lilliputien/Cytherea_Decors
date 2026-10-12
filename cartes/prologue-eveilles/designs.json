@@ -1,0 +1,9 @@
+{
+  "tomb_wall": {"slug": "mur-de-tombe", "seed": "f0ff325c-d443-4247-a16e-9b44e4b95940", "params": {"style": "grave", "degats": "leger", "aimants": "6x3", "panneaux": "rect"}},
+  "door_hive": {"slug": "porte-blindee", "seed": "0d5076f4-0040-4e7b-a03c-1a5731423cf6", "params": {"style": "sobre", "degats": "leger", "aimants": "5x2"}},
+  "gate":      {"slug": "portail-de-tombe", "seed": "14b4aad0-7986-437f-9fa4-6f09dd25ff70", "params": {"style": "sobre", "degats": "aucun", "aimants": "5x2"}, "h_in": 5.0},
+  "pillar":    {"slug": "pilier", "seed": "4a82c177-22a5-422b-af83-5583896b3967", "params": {"style": "grave", "degats": "leger", "aimants": "aucun"}},
+  "pylon":     {"slug": "pylone", "seed": "546739f1-bb7b-4bf5-8037-869fa28e1310", "params": {"style": "grave", "degats": "leger", "aimants": "aucun"}},
+  "sarco":     {"slug": "sarcophage", "seed": "8685eccb-ec5c-436f-9740-a13196071ebd", "params": {"style": "grave", "degats": "leger", "aimants": "aucun"}},
+  "pyramid":   {"slug": "pyramide", "seed": "85a58f6e-d197-4b07-ad4d-1c095acde945", "params": {"style": "sobre", "degats": "fort", "aimants": "aucun"}}
+}
