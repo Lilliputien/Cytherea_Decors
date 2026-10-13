@@ -29,6 +29,7 @@ Ce dépôt est public : il ne contient que des pièces originales générées. A
 | Strates Basses | pylône | v1 | gravé, dégâts légers |
 | Strates Basses | sarcophage | v1 | gravé, dégâts légers |
 | Strates Basses | pyramide | v1 | sobre, dégâts forts |
+| Strates Basses | poteau d’angle de tombe | v1 | gravé, dégâts légers, aimants 6 × 3 sur les 4 faces ; 0,5″ (murs de la carte) et 1,2″ (catalogue) |
 
 ## Impression
 
@@ -49,4 +50,8 @@ Blender 4.2 ou plus récent (ou le module Python `bpy`).
 
 `carte.json` est l'export JSON de l'Atelier ; `designs.json` donne, par type de décor, le nom de la pièce et ses réglages
 (`style` : base, sobre, grave ; `degats` : aucun, leger, fort ; `aimants` : 6x3, 5x2, aucun).
+Poteaux d’angle (un par jonction de murs, côté = épaisseur des murs) :
+
+    blender --background --python outils/cytherea_terrain.py -- --poteaux 0.5,1.2 --params '{"style":"grave","degats":"leger","aimants":"6x3"}' --out poteaux --render
+
 Options : `--bed 220` (plateau en mm, les murs plus longs sont coupés), `--render` (rendus Cycles).

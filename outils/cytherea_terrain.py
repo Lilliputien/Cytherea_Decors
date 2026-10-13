@@ -55,10 +55,11 @@ CATALOG = {  # cotes du catalogue Supabase (pouces) : largeur, profondeur, haute
     "sarco": (3.0, 1.4, 1.5),
     "pylon": (5.0, 5.0, 8.0),
     "pyramid": (10.0, 10.0, 6.0),
+    "tomb_post": (1.2, 1.2, 4.1),   # côté réel = épaisseur des murs qu'il raccorde (Atelier)
 }
 NAMES = {"tomb_wall": "mur-de-tombe", "door_tomb": "seuil-scelle", "door_hive": "porte-blindee",
          "niche": "niche-de-stase", "gate": "portail-de-tombe", "pillar": "pilier", "sarco": "sarcophage",
-         "pylon": "pylone", "pyramid": "pyramide"}
+         "pylon": "pylone", "pyramid": "pyramide", "tomb_post": "poteau-de-tombe"}
 # hauteurs du catalogue pour les décors non générés (blocs « à sourcer » du rendu)
 PLACEHOLDER_H = {"ruin_l": 6, "ruin_box": 5, "wall": 3, "muraille": 6, "container": 3, "rubble": 1, "crater": 0.3,
                  "trench": 0.3, "sandbags": 1, "barricade": 1.5, "wire": 1, "wall_door": 3,
@@ -383,6 +384,46 @@ def tomb_wall(L_in, T_in=1.2, H_in=4.1, name=None):
     ob = build(tag, parts, cuts)
     _center(ob, L, 0)
     return ob
+
+def tomb_post(S_in=0.5, H_in=4.1, name=None):
+    """Poteau d'angle (plan A de l'Atelier) : section carrée égale à l'épaisseur des murs,
+    faces pleines sur toute la hauteur pour que les bouts de murs s'y appuient, logements
+    d'aimants sur les quatre faces aux mêmes hauteurs que les murs, tête en pointe un peu
+    plus haute que le chaperon des murs (lecture de l'angle sur la table)."""
+    S, H = S_in * IN, H_in * IN
+    b = S / 2
+    tag = name or f"poteau_{S_in:.2f}"
+    tip = max(2.0, b * 0.3)
+    parts = [box(tag + "_fut", -b, b, -b, b, 0, H - 8),
+             hull(tag + "_tete", [(sx * b, sy * b, H - 9) for sx in (-1, 1) for sy in (-1, 1)] +
+                  [(sx * (b - 0.8), sy * (b - 0.8), H - 3) for sx in (-1, 1) for sy in (-1, 1)] +
+                  [(sx * tip, sy * tip, H + 5) for sx in (-1, 1) for sy in (-1, 1)])]
+    cuts = []
+    sw = max(1.6, min(2.6, S * 0.2))
+    for sign in (1, -1):
+        for axis in ("y", "x"):
+            fc = [_slit_cut(f"{tag}_g{axis}{sign}", 0, sw, 34, H - 46, b, sign, min(1.2, S * 0.09))]
+            if _engraved():
+                fc.append(_panel_cut(f"{tag}_band{axis}{sign}", -(b - 1.5), b - 1.5, 9, 10.4, b, sign, 0.6))
+                fc.append(_panel_cut(f"{tag}_bandh{axis}{sign}", -(b - 1.5), b - 1.5, H - 15, H - 13.6, b, sign, 0.6))
+            if axis == "x":
+                for c in fc:
+                    _swap_xy(c)
+            cuts += fc
+    m = MAGNETS.get(str(_P.get("aimants", "6x3")).replace("×", "x"))
+    if m:
+        dia, depth = m
+        for z in (24, H - 36):
+            for sx in (-1, 1):
+                x0, x1 = (b - depth, b + 1) if sx > 0 else (-b - 1, -b + depth)
+                cuts.append(teardrop_x(f"{tag}_aimx{sx}_{int(z)}", x0, x1, 0, z, dia))
+                cuts.append(_swap_xy(teardrop_x(f"{tag}_aimy{sx}_{int(z)}", x0, x1, 0, z, dia)))
+    lvl = _dmg()
+    if lvl:
+        for i in range(lvl):
+            sx, sy = _rng.choice((-1, 1)), _rng.choice((-1, 1))
+            cuts.append(chip(f"{tag}_eclat{i}", sx * (b - 1), sy * (b - 1), H - 9, 1.6 * lvl, 1.6 * lvl, 2.5 * lvl))
+    return build(tag, parts, cuts)
 
 def door_tomb(W_in=3.0, T_in=1.2, H_in=4.1, name=None, jamb_in=None, buttress=False):
     """Cadre d'une porte nécron (seuil scellé, porte blindée, portail). Montants de
@@ -1012,7 +1053,26 @@ def main():
     ap.add_argument("--out", default="cytherea_stl")
     ap.add_argument("--bed", type=float, default=220)
     ap.add_argument("--render", action="store_true")
+    ap.add_argument("--poteaux", help="côtés des poteaux d'angle en pouces, ex. 0.5,1.2")
+    ap.add_argument("--params", help="réglages JSON, ex. {\"style\":\"grave\",\"aimants\":\"6x3\"}")
+    ap.add_argument("--seed", default="poteau")
     a = ap.parse_args(argv or [])
+    if a.poteaux:
+        a.out = os.path.abspath(a.out)
+        os.makedirs(a.out, exist_ok=True)
+        _scene_reset()
+        obs = []
+        for v in a.poteaux.split(","):
+            S = float(v)
+            set_params(json.loads(a.params) if a.params else None, a.seed + "|" + v)
+            fname = f"poteau-de-tombe_{_fmt(S)}x{_fmt(S)}in"
+            ob = tomb_post(S, CATALOG["tomb_post"][2], fname)
+            write_stl(ob, os.path.join(a.out, fname + ".stl"))
+            obs.append(ob)
+        if a.render:
+            render_lineup(os.path.join(a.out, "rendu.png"), obs)
+        print("poteaux écrits dans", a.out)
+        return
     if a.layout:
         ds = json.load(open(a.designs, encoding="utf-8")) if a.designs else None
         c, n = make_from_layout(a.layout, a.out, a.bed, a.render, ds)
